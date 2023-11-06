@@ -42,7 +42,7 @@ function undef() {
 function getPerson(id) {
   switch (id) {
     case "me":
-      document.write("<u>Xiuming Zhang</u>");
+      document.write("<u>Wenyu li</u>");
       break;
     case "freeman_short":
       clickable("Bill Freeman", "https://billf.mit.edu/");
@@ -248,6 +248,9 @@ function getVenue(id) {
       break;
     case "ismrm":
       clickable("ISMRM", "https://en.wikipedia.org/wiki/International_Society_of_Magnetic_Resonance_in_Medicine");
+      break;
+    case "iconip":
+      clickable("ICONIP", "http://www.iconip2023.org/");
       break;
     default:
       undef();

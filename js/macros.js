@@ -252,6 +252,9 @@ function getVenue(id) {
     case "iconip":
       clickable("ICONIP", "http://www.iconip2023.org/");
       break;
+    case "ICICML":
+      clickable("ICICML", "http://www.icicml.org/");
+      break;
     default:
       undef();
   }

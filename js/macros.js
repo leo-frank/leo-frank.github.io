@@ -252,6 +252,9 @@ function getVenue(id) {
     case "iconip":
       clickable("ICONIP", "http://www.iconip2023.org/");
       break;
+    case "ICME24":
+      clickable("ICME", "https://2024.ieeeicme.org/");
+      break;
     case "ICICML":
       clickable("ICICML", "http://www.icicml.org/");
       break;
@@ -331,6 +334,10 @@ function getNews(id) {
 function paper(link) {
   text_button("paper", link);
 }
+function supp(link) {
+  text_button("supp", link);
+}
+
 
 function poster(link) {
   text_button("poster", link);

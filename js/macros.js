@@ -258,6 +258,9 @@ function getVenue(id) {
     case "ICICML":
       clickable("ICICML", "http://www.icicml.org/");
       break;
+    case "Arxiv":
+      clickable("Arxiv", "https://arxiv.org/");
+      break;
     default:
       undef();
   }

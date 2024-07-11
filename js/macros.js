@@ -261,6 +261,12 @@ function getVenue(id) {
     case "Arxiv":
       clickable("Arxiv", "https://arxiv.org/");
       break;
+    case "ICANN":
+      clickable("ICANN", "https://e-nns.org/icann2024/");
+      break;
+    case "PRCV":
+      clickable("PRCV", "http://www.prcv.cn/");
+      break;
     default:
       undef();
   }

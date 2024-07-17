@@ -267,6 +267,9 @@ function getVenue(id) {
     case "PRCV":
       clickable("PRCV", "http://www.prcv.cn/");
       break;
+    case "ACM MM 2024":
+      clickable("ACM MM 2024", "https://2024.acmmm.org/");
+      break;
     default:
       undef();
   }

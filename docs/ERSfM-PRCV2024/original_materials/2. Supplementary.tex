@@ -1,0 +1,222 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+\usepackage{amsmath,epsfig}
+\usepackage{amsmath,epsfig,graphicx}
+\usepackage{caption}
+\usepackage{float} 
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{svg} % 需使用包
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+\usepackage{float} 
+\renewcommand{\algorithmicrequire}{\textbf{Input: }} 
+\renewcommand{\algorithmicensure}{\textbf{Output: }}
+
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{svg} % 需使用包
+
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{- Supplementary -}
+%
+
+\author{ } 
+
+
+\maketitle              % typeset the header of the contribution
+%
+\section{Derivation for Similarity Transformation}
+
+Firstly, we calculate the relative scale using the method in GraphSfM:
+\begin{align}
+s_{ij} = \frac {(C_j^{k_1} - C_i^{k_2})} {(C_j^{k_1} - C_j^{k_2})} \\
+C_i^k = -R_{ki}^Tt_{ki}
+\end{align} 
+where $C_i^k$ represents the center of camera $k$ in the coordinate system of cluster $i$, and $R_{ki}$ and $T_{ki}$ respectively represent the camera pose (rotation and translation).
+
+With the relative scales known, we take a point $P$ observed by common camera $k$ in clusters $i$ and $j$ as an example to derive $R_{ji},t_{ji}$. The coordinates of $P$ in cluster $i$ and $j$ are denoted as $P_i$ and $P_j$, respectively. The coordinates of $P$ in the common camera $k$ are marked as $P_k$. Note that $P_k$ here is the coordinate under the scale of cluster $i$. Then we have
+\begin{align}
+R_{ki}P_i + t_{ki} &= P_k \\
+R_{kj}P_j + t_{kj} &= s_{ji}P_k \\
+s_{ji}R_{ji}P_{i} + t_{ji} &= P_j
+\end{align} 
+It can be inferred that
+\begin{align}
+R_{ji} &= R_{kj}^TR_{ki} = R_{j}^TR_i \\ 
+t_{ji} &= R_{kj}^T(s_{ji}t_{ki} - t_{kj}) \\
+       &=R_{j}^T(s_{ji}t_{i} - t_{j})
+\end{align} 
+Here, we omit the subscript $k$.
+
+\section{Additional Experimental Details}
+\subsection{Datasets}
+The dataset utilized in this article encompasses both small-scale and large-scale scenarios. The small-scale scenarios include Gerrard Hall, South Building, Person Hall [16], and DTU [20]. Gerrard Hall, South Building and Person Hall contains hundreds of sparse high-resolution images taken around the houses. Thees dataset has sparse perspectives and there are trees obstructing the shooting process, making reconstruction difficult. Each scene in the DTU dataset is captured with fixed camera poses in a laboratory environment, providing ground truth camera poses. We selected scan106, scan110, scan114, and scan122 to evaluate the  accuracy of pose recovery, with each scene containing 64 images. The large-scale scene datasets include Lund Cathedral, Duomo, San Marco [21], Rubber [22] and Aerial-20k. The first three scenarios were captured around three different churches, each consisting of over 1000 images. Rubber and Aerial-20k are aerial datasets. Aerial-20K is an in-house large-scale scene comprising 23458 images, taken by ourselves. Other datasets are publicly available.
+
+\subsection{Experiment Settings}
+All experiments were conducted on a PC with an Intel i9-9900KF CPU featuring 8 cores (16 threads) and 32GB of RAM. To ensure fairness, the cluster size settings for both GraphSfM and ER-SfM remained consistent across all experiments. We set the size to 80 for Person Hall and Rounxx, and 250 for Aerial-20K, and the remaining datasets were set to 40. In addition, due to memory limitations, no BA optimization was performed in the experiments on Aerial-20k.
+
+We set the size to 80 for Person Hall and Rounxx, and 250 for Aerial-20K
+
+\section{Algorithm}
+Algorithm \ref{alg:Graph_cut} describes the complete process of Graph Cut. Firstly, an initial connected image graph is constructed using images and matches (line 1), and this graph is added to the candidate queue (line 2). Processing is performed on the connected graphs in the candidate queue until the queue is empty. For each candidate graph, if the number of images in it is less than the cluster size $\mathcal{S}_{\text{max}}$, then the graph is considered as a cluster (line 7). Otherwise, the graph is partitioned into two subgraphs using the NCuts algorithm, and they are added to the candidate queue (lines 9-10). For the subsequent merging process, the edges cut off by the NCuts algorithm need to be collected, where the endpoints of these edges belong to different subgraphs (line 11). The result is the collection of all clusters $C$ obtained through graph cut and all edges $E_{\text{lost}}$ cut during the graph cut process.
+
+\begin{algorithm}[h]
+\caption{Graph cut Algorithm}
+\label{alg:Graph_cut}
+\begin{algorithmic}[1]
+\Require images $I$, matchs $M$, maximum number of cluster size $\mathcal{S}_{\text{max}}$
+\Ensure clusters $C$, lost edges $E_{lost}$
+\State $\mathcal{G}_{\text{image}} \gets$ InitImageGraph($I$, $M$) \algorithmiccomment{$\mathcal{G}_{\text{image}}$: image graph}  
+\State $C \gets \emptyset$,\ $Q_{graph} \gets \emptyset$   \algorithmiccomment{$Q_{graph}$: queue of candidate graphs}  
+\State Append $\mathcal{G}_{\text{image}}$ to $Q_{graph}$
+
+\While{$Q_{graph}$ not empty}
+     \State $\mathcal{G}_{\text{can}} \gets$ pop($Q_{graph}$)   \algorithmiccomment{$\mathcal{G}_{\text{can}}$: candidate graph}
+     \If{size of $\mathcal{G}_{\text{can}} \leq \mathcal{S}_{\text{max}}$} 						
+        \State Append $\mathcal{G}_{\text{can}}$ to $C$
+     \Else	
+        \State $\mathcal{G}_{\text{sub1}},\mathcal{G}_{\text{sub2}} \gets$ Ncuts($\mathcal{G}_{\text{can}}$)
+        \State Append $\mathcal{G}_{\text{sub1}},\mathcal{G}_{\text{sub2}} \ \text{to}\  Q_{graph}$
+        \State Collect lost edges $E_{lost}: \{ e_{k_1 k_2} | k_1\in \mathcal{G}_{\text{sub1}}, k_2 \in \mathcal{G}_{\text{sub2}} \} $   \algorithmiccomment{$e_{k_1 k_2}$: lost edge}   
+    \EndIf
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+
+Algorithm\ref{alg:Expansion} describes the complete process of Image Expansion. The Algorithm takes the clusters set obtained by graph cut and the set of lost edges as input. It traverses all the lost edges cut off during the graph cut stage (line 1), and for each endpoint pair of each lost edge corresponding to images $I_i$ and $I_j$, it finds their respective clusters and adds the other endpoint to the cluster (lines 3-6). Finally, the expanded clusters set is obtained.
+
+\begin{algorithm}
+\caption{Imges Expansion Algorithm}
+\label{alg:Expansion}
+\begin{algorithmic}[1]
+\Require clusters $C$, lost edges $E_{lost}$
+\Ensure expanded clusters $C_e$
+
+\ForAll{lost edge $e$ $\textbf{in}$ $E_{lost}$}
+    \State $I_i$, $I_j \gets$ $e$ \algorithmiccomment{$I_i$, $I_j$: images connected by $e$}
+    \State $c_k \gets$ FindCluster($C$,$I_i$) \algorithmiccomment{$c_k$: cluster containing $I_i$}
+    \State Insert Image $I_j$ into $c_k$
+    \State $c_l \gets$ FindCluster($C$,$I_j$) 
+    \State Insert Image $I_i$ into $c_l$
+\EndFor		
+    
+\end{algorithmic}
+\end{algorithm}
+
+
+Algorithm \ref{alg:Reduction} describes the complete process of Image Reduction. The image reduction process requires a sparse point cloud as guidance, which is obtained by incrementally reconstructing local images after graph cut. Firstly, for any pair of clusters, all common images are identified (line 2). Cluster edges are then constructed using these common images, with each edge containing all common images (line 3). Using these edges and clusters, a cluster graph is constructed (lines 5-6). Next, the edges in the cluster graph are traversed, and weights are assigned to the common images contained in the edges, with the top $s$ common images being marked (lines 7-14). The scoring is based on the minimum value of sparse points observed in the common images in both clusters (lines 9-11). Finally, marginal images that have not been marked are filtered out.
+
+Algorithm \ref{alg:image_clustering_ISFM} outlines the overall process of image clustering and local reconstruction. Firstly, images are clustered according to Algorithm \ref{alg:Graph_cut} (line 1). At this point, the images within each cluster are considered as local images, and parallel local incremental Structure from Motion (SfM) is used to reconstruct sparse point clouds $S_{local}$ and camera poses $P_{loacl}$ for these images (line 2). Subsequently, clusters are expanded and reduced, and during the reduction phase, $S_{local}$ is used to filter the expanded images (lines 3-4). Finally, camera poses $P_{ marginal}$ for the reduced marginal images are recovered using the Perspective-Three-Point (P3P) algorithm.
+\begin{algorithm}
+\caption{Imges Reduction Algorithm}
+\label{alg:Reduction}
+\begin{algorithmic}[1]
+\Require expanded clusters $C_e$, point cloud $S$, maximum number of common images $s$
+\Ensure reduced clusters $C_r$, cluster graph $\mathcal{G}_{cluster}$
+
+\ForAll{cluster $c_i,c_j$ \textbf{in} $C_e$ \textbf{and} $i \neq j$}  
+   \State $N_{i,j} \gets$ FindCommonNodes($c_i,c_j$)  \algorithmiccomment{$N_{i,j}$: common images between $c_i$ and $c_j$}
+   \State $e_{i,j} \gets$ ConstructEdge($c_i,c_j,N_{i,j}$)  \algorithmiccomment{$e_{i,j}$: cluster edge}
+   \State Collect cluster edges $E_{cluster}:\{e_{i,j}\}$   \algorithmiccomment{$E_{cluster}$: all cluster edges}
+\EndFor		
+\State $\mathcal{G}_{\text{cluster}}  \gets$ ConstructGraph($E_{cluster},C_e$)    \algorithmiccomment{$\mathcal{G}_{\text{cluster}}$: cluster graph}
+
+\ForAll{edges $e_{i,j} \textbf{in}$ ${G}_{\text{cluster}}$}
+    \ForAll{common image $n_k \textbf{in}$ $N_{i,j}$}
+        \State $O_i \gets$ CountObrs($n_{k},s_i$)      \algorithmiccomment{$O_i: \#$ of points observed in $s_i$ from $n_k$}
+        \State $O_j \gets$ CountObrs($n_{k},s_j$)      \algorithmiccomment{$O_j: \#$ of points observed in $s_j$ from $n_k$}
+        \State $W_{k} \gets$ Min($O_i,O_j $)           \algorithmiccomment{$W_k:$ weight of common image $n_k$}
+        \State MarkTopKImages($W_{k},N_{i,j},s$)
+    \EndFor		
+\EndFor		
+
+\ForAll{cluster $c_i$ $\textbf{in}$ $C_e$}
+    \If{ marginal image $I_m$ of  $c_i$ is not marked} 						
+        \State Remove($I_m$,$c_i$)
+    \EndIf    
+\EndFor		
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm \ref{alg:global_merging} describes the complete process of Global Merging. It takes reduced clusters $C_r$, a cluster graph $\mathcal{G}_{\text{cluster}}$, local camera poses $P_{local}$, and local point clouds  $S_{local}$ as input, and aims to generate global point clouds and camera poses. It begins by computing the relative transformations $s_{i,j},R_{i,j}$ and $t_{i,j}$ for each edge in the cluster graph. Then, it extracts triples from the cluster graph and applies loop constraints on rotations and scales for each triple to filter out noisy transformations. Global averaging is then performed on the filtered rotations and scales. Next, the algorithm computes the relative transformations using the global rotations and scales for each edge in the cluster graph, updating the rotations and scales sets accordingly. It then applies loop constraints on translations for each triple, using the global rotations and scales. Scales averaging is performed on the resulting translations. Finally, for each cluster in the cluster graph where  $i \neq 0$, the algorithm transforms and merges the cluster using the global rotations, scales, and translations.
+
+
+
+
+
+
+\begin{algorithm}
+\caption{Image Clustering and Parallel Local Incremental Reconstruction}
+\label{alg:image_clustering_ISFM}
+\begin{algorithmic}[1]
+\Require images $I$, matchs $M$, maximum number of cluster size $\mathcal{S}_{\text{max}}$, maximum number of common images $s$
+\Ensure reduced clusters $C_r$, local point clouds $S$ and camera poses $P$
+
+\State $C,E_{lost} \gets$ GraphCut()  \algorithmiccomment{Alg.~\ref{alg:Graph_cut}}
+\State $S_{local},P_{loacl} \gets$ LocalSfM($C$) 
+\State $C_e \gets$ ImageExpansion($C, E_{lost}$)   \algorithmiccomment{Alg.~\ref{alg:Expansion}}
+\State $C_r \gets$ ImageReduction($C_e, S, s$)     \algorithmiccomment{Alg.~\ref{alg:Reduction}}
+\State $P_{ marginal} \gets$ P3P($C_r$) 
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Global Merging Algorithm}
+\label{alg:global_merging}
+\begin{algorithmic}[1]
+\Require reduced clusters $C_r$, cluster graph $\mathcal{G}_{\text{cluster}}$, loacl camera poses $P_{local}$, local point clouds $S_{local}$ 
+\Ensure global point clouds $S$ and camera poses $P$
+
+
+\ForAll{edges $e_{i,j} \textbf{in}$ $\mathcal{G}_{\text{cluster}}$}
+    \State $s_{i,j},R_{i,j},t_{i,j} \gets$ ComputeRelativeTransformation($e_{i,j}$)  
+\EndFor	   
+
+\State $Trps \gets$ ExtractTriples($\mathcal{G}_{\text{cluster}}$)  \algorithmiccomment{$Trps$: triples}
+
+\ForAll{triple $trp$ \textbf{in} $Trps$}
+    \State $R_{filtered} \gets$ LoopConstrain($R$,$\epsilon_r$) \algorithmiccomment{$R$: set of $R_{i,j}$,$\epsilon_r$ rotation threshold}
+    \State $s_{filtered} \gets$ LoopConstrain($s$,$\epsilon_s$) \algorithmiccomment{$s$: set of $s_{i,j}$,$\epsilon_s$ scale threshold}
+\EndFor	 
+\State $R_{global} \gets$ GlobalAveraging($R_{filtered}$)
+\State $s_{global} \gets$ ScaleAveraging($s_{filtered}$)
+\ForAll{edges $e_{i,j} \textbf{in}$ $\mathcal{G}_{\text{cluster}}$}
+    \State $s_{i,j},R_{i,j} \gets$ ComputeRelativeTransformationByGlobal($R_{global},s_{global}$) 
+    \State Updata set $R$ and $s$
+\EndFor	 
+
+\ForAll{triple $trp$ \textbf{in} $Trps$}
+    \State $t_{filtered} \gets$ LoopConstrain($t,R,s$,$\epsilon_t$) \algorithmiccomment{$\epsilon_t$ translation threshold}
+\EndFor	 
+\State $t_{global} \gets$ ScaleAveraging($R_{global},s_{global}$)
+
+\ForAll{cluster $c_i$ \textbf{in} $C_r$ \textbf{and} $i \neq 0$}
+    \State TransformAndMerge($c_i,R_{global},s_{global},t_{global}$)
+\EndFor	
+
+
+\end{algorithmic}
+\end{algorithm}
+
+%
+%
+
+\end{document}
